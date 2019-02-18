@@ -41,11 +41,18 @@ import org.xml.sax.SAXException;
  */
 public class UXML {
 
-    public static List<Element> xpath(Node doc, String xpathStr) {
+    /**
+     * 指定された要素、XPATHで下級要素を取得する
+     *
+     * @param doc 上位要素
+     * @param xPath xPath
+     * @return 下級要素リスト
+     */
+    public static List<Element> xpath(Node doc, String xPath) {
         try {
             XPathFactory xPathfactory = XPathFactory.newInstance();
             XPath xpath = xPathfactory.newXPath();
-            XPathExpression expr_entitys = xpath.compile(xpathStr);
+            XPathExpression expr_entitys = xpath.compile(xPath);
             NodeList nl = (NodeList) expr_entitys.evaluate(doc, XPathConstants.NODESET);
             return getChildElements(nl);
         } catch (XPathExpressionException ex) {
@@ -54,26 +61,17 @@ public class UXML {
         return null;
     }
 
-    public static List<Element> path(Node doc, String paths) {
-        List<Element> els = new ArrayList<>();
-        return path(els, doc, paths);
-    }
-
-    public static List<Element> path(List<Element> elements, Node doc, String paths) {
-        if (paths.contains("/")) {
-            String npath = paths.substring(0, paths.indexOf('/'));
-            for (Element e : getChildElements(doc.getChildNodes(), npath)) {
-                return path(elements, e, paths.substring(paths.indexOf('/') + 1));
-            }
-        } else {
-            return getChildElements(doc.getChildNodes(), paths);
-        }
-        return elements;
-    }
-
-    public static Element firstElement(Node doc, String xpathStr) {
+    /**
+     * 指定された要素、XPATHで下級第一番目の要素を取得する<br>
+     * 取得できない場合、nullを返却する。
+     *
+     * @param doc 上位要素
+     * @param xPath xPath
+     * @return 下位要素
+     */
+    public static Element firstElement(Node doc, String xPath) {
         try {
-            List<Element> elments = xpath(doc, xpathStr);
+            List<Element> elments = xpath(doc, xPath);
             if (null == elments || elments.isEmpty()) {
                 return null;
             }
@@ -84,6 +82,13 @@ public class UXML {
         return null;
     }
 
+    /**
+     * 指定された要素リスト、下級要素を取得する<br>
+     * TEXT_NODE等をFilterする
+     *
+     * @param parent 上位要素リスト
+     * @return 下位要素
+     */
     public static List<Element> getChildElements(NodeList parent) {
         List<Element> elements = new ArrayList<>();
         for (int i = 0; i < parent.getLength(); ++i) {
@@ -95,6 +100,14 @@ public class UXML {
         return elements;
     }
 
+    /**
+     * 指定された要素リスト、下級要素を取得する<br>
+     * TEXT_NODE＆Tag名でをFilterする
+     *
+     * @param parent 上位要素リスト
+     * @param tagName タグ名
+     * @return 下位要素
+     */
     public static List<Element> getChildElements(NodeList parent, String tagName) {
         List<Element> elements = new ArrayList<>();
         for (int i = 0; i < parent.getLength(); ++i) {
@@ -106,18 +119,39 @@ public class UXML {
         return elements;
     }
 
+    /**
+     * 指定されたDOCに、上級要素に、elementを作成して追加する。<br>
+     * 新規追加した要素をそのまま返却する。
+     *
+     * @param doc ドキュメント
+     * @param parentElement 上位要素
+     * @param elementName 要素名
+     * @return 新規追加した要素
+     */
     public static Element append(Document doc, Element parentElement, String elementName) {
         Element currentElement = doc.createElement(elementName);
         parentElement.appendChild(currentElement);
         return currentElement;
     }
 
+    /**
+     * 指定されたDOCに、ROOTに、elementを作成して追加する。<br>
+     *
+     * @param doc ドキュメント
+     * @param elementName 要素名
+     * @return 新規追加した要素
+     */
     public static Element append(Document doc, String elementName) {
         Element currentElement = doc.createElement(elementName);
         doc.appendChild(currentElement);
         return currentElement;
     }
 
+    /**
+     * 新規XMLドキュメントを作成する
+     *
+     * @return XMLドキュメント
+     */
     public static Document newXml() {
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -129,15 +163,27 @@ public class UXML {
         return null;
     }
 
-    public static Document loadXmlFromString(String input) {
+    /**
+     * XML文字からドキュメントを作成する
+     *
+     * @param xmlString xml文字列
+     * @return ドキュメント
+     */
+    public static Document loadXmlFromString(String xmlString) {
         try {
-            return loadXml(UString.toStream(input));
+            return loadXml(UString.toStream(xmlString));
         } catch (Exception e) {
             Logger.getLogger(UXML.class.getName()).log(Level.SEVERE, null, e);
         }
         return null;
     }
 
+    /**
+     * Streamから、XMLを作成する
+     *
+     * @param input 入力Stream
+     * @return ドキュメント
+     */
     public static Document loadXml(InputStream input) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -151,24 +197,12 @@ public class UXML {
         return null;
     }
 
-    public static void save(Document doc, String xmlFilePath) {
-        try {
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(new File(xmlFilePath));
-            transformer.transform(source, result);
-        } catch (IllegalArgumentException | TransformerException e) {
-            Logger.getLogger(UXML.class.getName()).log(Level.SEVERE, null, e);
-        }
-    }
-
-    public static String pretty(String xmlData) {
-        return pretty(loadXmlFromString(xmlData));
-    }
-
+    /**
+     * XMLをフォーマットする
+     *
+     * @param doc XMLドキュメント
+     * @return フォーマット済みxml文字列
+     */
     public static String pretty(Document doc) {
         Transformer transformer;
         try {
@@ -185,6 +219,32 @@ public class UXML {
         }
     }
 
+    /**
+     * XMLを保存する
+     *
+     * @param doc ドキュメント
+     * @param saveToPath ファイルパス
+     */
+    public static void save(Document doc, String saveToPath) {
+        try {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(new File(saveToPath));
+            transformer.transform(source, result);
+        } catch (IllegalArgumentException | TransformerException e) {
+            Logger.getLogger(UXML.class.getName()).log(Level.SEVERE, null, e);
+        }
+    }
+
+    /**
+     * XMLを保存する
+     *
+     * @param doc ドキュメント
+     * @param outputStream 保存先
+     */
     public static void save(Document doc, OutputStream outputStream) {
         try {
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
@@ -200,6 +260,12 @@ public class UXML {
         }
     }
 
+    /**
+     * XMLを文字列変換する
+     *
+     * @param doc ドキュメント
+     * @return XML文字列
+     */
     public static String getString(Document doc) {
         try {
             Transformer transformer = TransformerFactory.newInstance().newTransformer();

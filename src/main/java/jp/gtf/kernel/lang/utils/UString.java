@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,50 +22,136 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.util.DigestUtils;
 
+/**
+ * 文字列操作
+ *
+ * @author F
+ */
 public class UString {
 
-    static ClassLoader loader = null;
+    private static ClassLoader loader = null;
 
     static {
         loader = UString.class.getClassLoader();
     }
 
+    /**
+     * 改行コードLF
+     */
     public static final String LF = "\n";
-    public static final String SPACE = " ";
-    public static final String SPACE4 = "    ";
+    /**
+     * 空文字列
+     */
     public static final String EMPTY = "";
+    /**
+     * 記号: {@code #}
+     */
     public static final String MARK_SHARP = "#";
+    /**
+     * 記号: {@code "}
+     */
     public static final String MARK_SINGLE_QUOTE = "'";
+    /**
+     * 記号: {@code .}
+     */
     public static final String MARK_DOT = ".";
+    /**
+     * 記号: {@code ./}
+     */
     public static final String MARK_DOT_SLICKE = "./";
+    /**
+     * 記号: {@code =}
+     */
     public static final String MARK_EQUALS = "=";
+    /**
+     * 記号: {@code _}
+     */
     public static final String MARK_UNDERBAR = "_";
+    /**
+     * 記号: {@code /}
+     */
     public static final String MARK_SLICE = "/";
+    /**
+     * 記号: {@code ,}
+     */
     public static final String MARK_COMMANER = ",";
-    public static final String MARK_BREAKLINE = "\n";
+    /**
+     * 記号: {@code ;}
+     */
     public static final String MARK_SEMICOLON = ";";
-
+    /**
+     * 正規表現: {@code ;}
+     */
     public static final String REGEX_MARK_DOT = "\\.";
+    /**
+     * 正規表現: {@code .*}
+     */
     public static final String REGEX_PATTERN_ALL = ".*";
+    /**
+     * 正規表現: {@code ^[a-zA-Z0-9]+$}
+     */
     public static final String REGEX_PATTERN_ALNUM = "^[a-zA-Z0-9]+$";
+    /**
+     * 正規表現: {@code ^[a-zA-Z]+$}
+     */
     public static final String REGEX_PATTERN_ALPHA = "^[a-zA-Z]+$";
+    /**
+     * 正規表現: {@code ^[a-zA-Z0-9_@]*$}
+     */
     public static final String REGEX_PATTERN_ALPHANUMERIC = "^[a-zA-Z0-9_@]*$";
+    /**
+     * 正規表現: {@code ^[0-9]+$}
+     */
     public static final String REGEX_PATTERN_NUMBER = "^[0-9]+$";
+    /**
+     * 正規表現: {@code ^\\d{3}-\\d{4}}<br>
+     * 郵便番号
+     */
     public static final String REGEX_PATTERN_POSTALCODE = "^\\d{3}-\\d{4}";
+    /**
+     * 正規表現: メールアドレスマッチング<br>
+     *
+     */
     public static final String REGEX_PATTERN_MAIL = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
 
+    /**
+     * Velocity Template等利用する
+     *
+     * @return 改行コード
+     */
     public static String breakLine() {
-        return MARK_BREAKLINE;
+        return "\n";
     }
 
+    /**
+     * 空白で右PADDINGする
+     *
+     * @param s 文字列
+     * @param n 桁数
+     * @return PADDING済み文字列
+     */
     public static String padRight(String s, int n) {
         return String.format("%1$-" + n + "s", s);
     }
 
+    /**
+     * 空白で左PADDINGする
+     *
+     * @param s 文字列
+     * @param n 桁数
+     * @return PADDING済み文字列
+     */
     public static String padLeft(String s, int n) {
         return String.format("%1$" + n + "s", s);
     }
 
+    /**
+     * 文字列はlengthを超える場合、"..."を追加する
+     *
+     * @param string 文字列
+     * @param length 最大桁数
+     * @return 結果
+     */
     public static String fixedLength(String string, int length) {
         if (string.length() > length) {
             return new StringBuilder(string.substring(0, length)).append("...").toString();
@@ -72,6 +159,13 @@ public class UString {
         return padRight(string, length);
     }
 
+    /**
+     * オブジェクトを文字列変換<br>
+     * nullの場合、""を返却すうｒ
+     *
+     * @param object オブジェクト
+     * @return 結果
+     */
     public static String null2blank(Object object) {
         if (object == null) {
             return "";
@@ -79,6 +173,15 @@ public class UString {
         return String.valueOf(object);
     }
 
+    /**
+     * 指定された文字列をチェックする
+     *
+     * @param str チェック対象文字列
+     * @param min 最小桁数
+     * @param max 最大桁数
+     * @param regex 正規表現
+     * @return チェック結果
+     */
     public static boolean match(String str, int min, int max, String regex) {
         if (min > 0 && UString.isNull(str)) {
             return false;
@@ -89,6 +192,12 @@ public class UString {
         return str.matches(regex);
     }
 
+    /**
+     * 文字列は空白かを判断する
+     *
+     * @param str 文字列
+     * @return 判断結果
+     */
     public static boolean isNull(String str) {
         if (str == null) {
             return true;
@@ -96,6 +205,12 @@ public class UString {
         return str.isEmpty() || "null".equals(str);
     }
 
+    /**
+     * 指定された文字列はメールアドレスではないかをチェックする
+     *
+     * @param str 文字列
+     * @return 判断結果
+     */
     public static boolean isEMail(String str) {
         if (str == null) {
             return false;
@@ -103,6 +218,12 @@ public class UString {
         return match(str, 1, 36, REGEX_PATTERN_MAIL);
     }
 
+    /**
+     * 指定された文字列は数字（小数含め）ではないかをチェックする
+     *
+     * @param value 文字列
+     * @return 判断結果
+     */
     public static boolean isNumber(String value) {
         if (UString.isNull(value)) {
             return false;
@@ -110,6 +231,13 @@ public class UString {
         return value.matches("^[-+]?\\d+(\\.\\d+)?$");
     }
 
+    /**
+     * 文字列を数字返却する
+     *
+     * @param value 文字列
+     * @param defaultValue 規定値
+     * @return 数字
+     */
     public static int toNumber(String value, int defaultValue) {
         if (UString.isNumber(value)) {
             return Integer.parseInt(value);
@@ -117,6 +245,13 @@ public class UString {
         return defaultValue;
     }
 
+    /**
+     * 文字列を数字返却する
+     *
+     * @param value 文字列
+     * @param defaultValue 規定値
+     * @return 数字
+     */
     public static long toNumber(String value, long defaultValue) {
         if (UString.isNumber(value)) {
             return Long.parseLong(value);
@@ -124,6 +259,14 @@ public class UString {
         return defaultValue;
     }
 
+    /**
+     * 文字列を郵便番号を整形する。<br>
+     * input : 1234567<br>
+     * output: 123-4567
+     *
+     * @param value 文字列
+     * @return 郵便番号
+     */
     public static String asPostalCode(String value) {
         if (UString.isNull(value)) {
             return UString.EMPTY;
@@ -134,11 +277,25 @@ public class UString {
         return value.substring(0, 3).concat("-").concat(value.substring(3));
     }
 
+    /**
+     * テキストとStream変換する
+     *
+     * @param text テキスト
+     * @return Stream
+     * @throws Exception Exception
+     */
     public static InputStream toStream(String text) throws Exception {
         InputStream in = new ByteArrayInputStream(text.getBytes("UTF-8"));
         return in;
     }
 
+    /**
+     * Streamを文字列変換
+     *
+     * @param inputStream Stream
+     * @return 文字列
+     * @throws Exception Exception
+     */
     public static String toString(InputStream inputStream) throws Exception {
         return IOUtils.toString(inputStream);
     }
@@ -159,12 +316,27 @@ public class UString {
         return null;
     }
 
+    /**
+     * Java共通Propertiesファイルを文字列変換
+     *
+     * @param properties ファイル
+     * @return 文字列
+     * @throws Exception Exception
+     */
     public static String toString(Properties properties) throws Exception {
         StringWriter writer = new StringWriter();
         properties.list(new PrintWriter(writer));
         return writer.getBuffer().toString();
     }
 
+    /**
+     * オブジェクトを文字列変換<br>
+     * input: a,b,c,d <br>
+     * output: "a,b,c,d"
+     *
+     * @param objects 複数オブジェクト
+     * @return 文字列
+     */
     public static String toString(Object... objects) {
         StringBuilder sb = new StringBuilder();
         String px = "";
@@ -176,6 +348,15 @@ public class UString {
         return sb.toString();
     }
 
+    /**
+     * オブジェクトを文字列変換<br>
+     * input: a,b,c,d <br>
+     * output: "a,b,c,d"
+     *
+     * @param <T> オブジェクトタイプ
+     * @param objects 複数オブジェクト
+     * @return 文字列
+     */
     public static <T> String toString(Iterable<T> objects) {
         StringBuilder sb = new StringBuilder();
         String px = "";
@@ -187,20 +368,15 @@ public class UString {
         return sb.toString();
     }
 
-    public static String combine(String splitC, String... strs) {
-        String prefix = "";
-        StringBuilder sb = new StringBuilder();
-        for (String str : strs) {
-            sb.append(prefix);
-            sb.append(str == null ? "" : str);
-            prefix = splitC;
-        }
-        return sb.toString();
-    }
-
-    public static String getTextFromClasspath(String templatePath) {
+    /**
+     * クラスパスからリソースを取得する
+     *
+     * @param resourceFilePath リソースパス
+     * @return 文字列
+     */
+    public static String getTextFromClasspath(String resourceFilePath) {
         try {
-            return IOUtils.toString(loader.getResourceAsStream(templatePath));
+            return IOUtils.toString(loader.getResourceAsStream(resourceFilePath));
         } catch (IOException ex) {
             Logger.getLogger(UString.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -227,8 +403,10 @@ public class UString {
         return ids;
     }
 
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+
     public static String md5(String value) {
-        return DigestUtils.md5DigestAsHex(value.getBytes());
+        return DigestUtils.md5DigestAsHex(value.getBytes(UTF8));
     }
 
     public static String limitLength(String value, int maxLeng) {

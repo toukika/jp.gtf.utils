@@ -76,10 +76,12 @@ public class UZIP {
                 if (ze.isDirectory()) {
                     boolean mkdirs = newFile.mkdirs();
                     if (!mkdirs) {
-                        return;
+                        throw new IOException("Unable to create path");
                     }
                 } else {
-                    newFile.getParentFile().mkdirs();
+                    if (!newFile.getParentFile().mkdirs()) {
+                        throw new IOException("Unable to create path");
+                    }
                     try (FileOutputStream fos = new FileOutputStream(newFile.getAbsolutePath())) {
                         int len;
                         while ((len = zis.read(buffer)) > 0) {
@@ -112,10 +114,5 @@ public class UZIP {
             copy(in, out);
         }
     }
-//
-//    private static void copy(InputStream in, File file) throws IOException {
-//        try (OutputStream out = new FileOutputStream(file)) {
-//            copy(in, out);
-//        }
-//    }
+
 }
