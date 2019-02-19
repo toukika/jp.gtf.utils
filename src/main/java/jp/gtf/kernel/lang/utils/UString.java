@@ -67,6 +67,15 @@ public class UString {
      */
     public static final String EMPTY = "";
     /**
+     * スペース
+     */
+    public static final String SPACE = " ";
+    /**
+     * スペース(4)
+     */
+    public static final String SPACE4 = " ";
+
+    /**
      * 記号: {@code #}
      */
     public static final String MARK_SHARP = "#";
